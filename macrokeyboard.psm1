@@ -496,13 +496,24 @@ function stop-MKPort {
     $port.Dispose()
 }
 
+function Delete-Mkkey {
+    param (
+        [ValidateSet(1,2,3,4,5,6)]
+        [int]$number
+    )
+    
+    Set-MKkey -number $number -color "000000" -sequence "" -text ""
+}
 
 function Set-MKkey {
     [CmdletBinding()]
     param (
+        [ValidateSet(1,2,3,4,5,6)]
         [int]$number,
+        [ValidateSet("r","p")]
+        [string]$press = "r",
         [String]$color = "FF5555",
-        [String]$action = " ",
+        [String]$sequence = "",
         [String]$text = ""
     )
     
@@ -516,14 +527,16 @@ function Set-MKkey {
     }
     
     process {
-
-        Get-Error
-        Start-Sleep -Milliseconds 300
         $myport = start-MKPort -portname $script:portname -verbose 
-        $myport 
-        $myport.WriteLine("T $number $text")
-        $myport.WriteLine("A $number $action")
-        $myport.WriteLine("K $number $color")
+        $mytext = "T $number $text"
+        $myport.WriteLine($mytext)
+        Write-Verbose $mytext
+        $mytext = "A $number$press $sequence"
+        $myport.WriteLine($mytext)
+        Write-Verbose $mytext
+        $mytext = "K $number $color"
+        $myport.WriteLine($mytext)
+        Write-Verbose $mytext
     }
     
     end {
@@ -539,12 +552,15 @@ function Get-MKsequenceStep() {
     param (
         [Parameter(Position = 0)]    
         [String]$key,
+        [ValidateSet("r","p","")]
+        [string]$press = "",
         [Parameter(Position = 1)]    
-        [String]$mode = "MOD_NONE"   
+        [String]$mode = "MOD_NONE"  ,
+        [String]$target = "k"
     )
  
     if ($KeyboardKeycode.ContainsKey($key) ) {
-        "k{0}" -f ($KeyboardKeycode.$key + $KeyboardMods.$mode)
+        "{0}{1}{2}" -f $target,($KeyboardKeycode.$key + $KeyboardMods.$mode),$press
     }
 }
 
@@ -572,4 +588,5 @@ Export-ModuleMember -Function Start-Mkport
 Export-ModuleMember -Function Stop-Mkport
 Export-ModuleMember -Function Get-MKsequenceStep
 Export-ModuleMember -Function Set-Mkkey
+Export-ModuleMember -Function Delete-Mkkey
 
